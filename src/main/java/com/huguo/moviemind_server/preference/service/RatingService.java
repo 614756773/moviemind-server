@@ -1,6 +1,8 @@
 package com.huguo.moviemind_server.preference.service;
 
 import com.huguo.moviemind_server.common.dto.PageResponse;
+import com.huguo.moviemind_server.common.exception.ConflictException;
+import com.huguo.moviemind_server.common.exception.ForbiddenException;
 import com.huguo.moviemind_server.common.exception.ResourceNotFoundException;
 import com.huguo.moviemind_server.movie.model.Movie;
 import com.huguo.moviemind_server.preference.model.Rating;
@@ -63,7 +65,7 @@ public class RatingService {
         // Check if rating already exists
         Optional<Rating> existingRating = ratingRepository.findByUserIdAndMovieId(userId, request.getMovieId());
         if (existingRating.isPresent()) {
-            throw new RuntimeException("Rating for this movie already exists");
+            throw new ConflictException("Rating for this movie already exists");
         }
 
         Rating rating = new Rating();
@@ -88,7 +90,7 @@ public class RatingService {
 
         // Verify ownership
         if (!rating.getUserId().equals(userId)) {
-            throw new RuntimeException("Unauthorized to update this rating");
+            throw new ForbiddenException("Forbidden to update this rating");
         }
 
         if (request.getScore() != null) {
@@ -112,7 +114,7 @@ public class RatingService {
 
         // Verify ownership
         if (!rating.getUserId().equals(userId)) {
-            throw new RuntimeException("Unauthorized to delete this rating");
+            throw new ForbiddenException("Forbidden to delete this rating");
         }
 
         ratingRepository.delete(rating);
@@ -124,7 +126,7 @@ public class RatingService {
 
         // Verify ownership
         if (!rating.getUserId().equals(userId)) {
-            throw new RuntimeException("Unauthorized to access this rating");
+            throw new ForbiddenException("Forbidden to access this rating");
         }
 
         return convertToResponse(rating);

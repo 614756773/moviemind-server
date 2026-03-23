@@ -26,7 +26,8 @@ public interface WatchlistItemRepository extends JpaRepository<WatchlistItem, Lo
 
     @Query("SELECT w FROM WatchlistItem w WHERE w.userId = :userId AND " +
            "(:search IS NULL OR :search = '' OR " +
-           "LOWER(w.movie.title) LIKE LOWER(CONCAT('%', :search, '%')))")
+           "CAST(w.movieId as string) LIKE CONCAT('%', :search, '%') OR " +
+           "LOWER(COALESCE(w.aiReasonSnapshot, '')) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<WatchlistItem> searchByUserId(@Param("userId") String userId, @Param("search") String search, Pageable pageable);
 
     boolean existsByUserIdAndMovieId(String userId, Long movieId);

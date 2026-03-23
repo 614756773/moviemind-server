@@ -63,6 +63,12 @@ public class MovieController {
         return ResponseEntity.ok(new ApiResponse<>("Movies by tag retrieved successfully", movies));
     }
 
+    @GetMapping("/genres/{genreName}")
+    public ResponseEntity<ApiResponse<List<Movie>>> getMoviesByGenre(@PathVariable String genreName) {
+        List<Movie> movies = movieService.getMoviesByGenre(genreName);
+        return ResponseEntity.ok(new ApiResponse<>("Movies by genre retrieved successfully", movies));
+    }
+
     @GetMapping("/year/{year}")
     public ResponseEntity<ApiResponse<List<Movie>>> getMoviesByYear(@PathVariable Integer year) {
         List<Movie> movies = movieService.getMoviesByYear(year);
@@ -73,5 +79,11 @@ public class MovieController {
     public ResponseEntity<ApiResponse<List<String>>> getAllTags() {
         List<String> tags = movieService.getAllTagNames();
         return ResponseEntity.ok(new ApiResponse<>("Tags retrieved successfully", tags));
+    }
+
+    @GetMapping("/genres")
+    public ResponseEntity<ApiResponse<List<String>>> getAllGenres() {
+        List<String> genres = movieService.getAllGenreNames();
+        return ResponseEntity.ok(new ApiResponse<>("Genres retrieved successfully", genres));
     }
 }

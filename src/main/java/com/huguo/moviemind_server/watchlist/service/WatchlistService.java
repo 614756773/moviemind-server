@@ -2,6 +2,9 @@ package com.huguo.moviemind_server.watchlist.service;
 
 import com.huguo.moviemind_server.auth.model.User;
 import com.huguo.moviemind_server.auth.repository.UserRepository;
+import com.huguo.moviemind_server.common.exception.BadRequestException;
+import com.huguo.moviemind_server.common.exception.ConflictException;
+import com.huguo.moviemind_server.common.exception.ForbiddenException;
 import com.huguo.moviemind_server.common.exception.ResourceNotFoundException;
 import com.huguo.moviemind_server.movie.model.Movie;
 import com.huguo.moviemind_server.movie.repository.MovieRepository;
@@ -42,8 +45,14 @@ public class WatchlistService {
 
     public Page<WatchlistResponse> getUserWatchlist(String username, String status, String search, Pageable pageable) {
         Page<WatchlistItem> items;
-        WatchlistItem.WatchlistStatus statusFilter = status != null ?
-                WatchlistItem.WatchlistStatus.valueOf(status.toUpperCase()) : null;
+        WatchlistItem.WatchlistStatus statusFilter = null;
+        if (status != null) {
+            try {
+                statusFilter = WatchlistItem.WatchlistStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException ex) {
+                throw new BadRequestException("Invalid watchlist status: " + status);
+            }
+        }
 
         if (statusFilter != null) {
             if (search != null && !search.trim().isEmpty()) {

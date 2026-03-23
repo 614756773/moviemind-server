@@ -1,10 +1,13 @@
 package com.huguo.moviemind_server.config;
 
-import com.huguo.moviemind_server.auth.service.UserDetailsServiceImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.huguo.moviemind_server.auth.repository.UserRepository;
+import com.huguo.moviemind_server.auth.service.UserDetailsServiceImpl;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -15,21 +18,21 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private static final AntPathRequestMatcher API_MATCHER = new AntPathRequestMatcher("/api/**");
+
     @Autowired
     private UserRepository userRepository;
 
-    
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -55,6 +58,8 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
@@ -63,6 +68,28 @@ public class SecurityConfig {
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
+                )
+                .exceptionHandling(ex -> ex
+                        .defaultAuthenticationEntryPointFor((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.getWriter().write(objectMapper.writeValueAsString(apiErrorBody(
+                                    HttpServletResponse.SC_UNAUTHORIZED,
+                                    "Unauthorized",
+                                    "Authentication required",
+                                    request.getRequestURI()
+                            )));
+                        }, API_MATCHER)
+                        .defaultAccessDeniedHandlerFor((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.getWriter().write(objectMapper.writeValueAsString(apiErrorBody(
+                                    HttpServletResponse.SC_FORBIDDEN,
+                                    "Forbidden",
+                                    "Access denied",
+                                    request.getRequestURI()
+                            )));
+                        }, API_MATCHER)
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
@@ -89,5 +116,15 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions(customizer -> customizer.sameOrigin()));
 
         return http.build();
+    }
+
+    private Map<String, Object> apiErrorBody(int status, String error, String message, String path) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", Instant.now().toString());
+        body.put("status", status);
+        body.put("error", error);
+        body.put("message", message);
+        body.put("path", path);
+        return body;
     }
 }

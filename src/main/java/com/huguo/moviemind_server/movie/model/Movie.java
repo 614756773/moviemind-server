@@ -23,6 +23,7 @@ public class Movie {
     @Column(nullable = false, length = 200)
     private String title;
 
+    @Column(name = "release_year")
     private Integer year;
 
     @Column(name = "genres_str")

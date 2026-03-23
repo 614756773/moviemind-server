@@ -34,3 +34,13 @@ mvn spring-boot:run
 2. 用户名：`sa`  
 3. 密码：空  
 4. JDBC URL 与 [application.properties](src/main/resources/application.properties) 中 `spring.datasource.url` 一致。  
+
+## 内容特征提取算法（当前实现）
+
+当前使用 `rule-based-v1.1` 规则算法：
+
+1. 将电影标题、类型、标签、简介、抓取原始文本合并为分析语料。  
+2. 用加权情感词典计算情感分：  
+   - `sentiment = (positiveWeight - negativeWeight) / (positiveWeight + negativeWeight)`  
+3. 用主题/氛围/风格词典做关键词匹配提取特征标签。  
+4. 将结果写入 `movie_features`，并记录 `algorithmVersion` 便于后续升级对比。  

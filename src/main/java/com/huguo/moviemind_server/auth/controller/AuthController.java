@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -18,16 +20,22 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final AuthenticationManager authenticationManager;
 
     @Autowired
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, AuthenticationManager authenticationManager) {
         this.authService = authService;
+        this.authenticationManager = authenticationManager;
     }
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<User>> login(@RequestBody LoginRequest request, HttpSession session) {
         User user = authService.login(request.getUsername(), request.getPassword());
 
+        Authentication authentication = authenticationManager.authenticate(
+                UsernamePasswordAuthenticationToken.unauthenticated(request.getUsername(), request.getPassword())
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
         session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
 
         return ResponseEntity.ok(new ApiResponse<>("Login successful", user));

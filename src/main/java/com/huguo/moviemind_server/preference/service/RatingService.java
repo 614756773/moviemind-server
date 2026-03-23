@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -152,7 +154,13 @@ public class RatingService {
         response.setScore(rating.getScore() != null ? rating.getScore().intValue() : null);
         String tagStr = rating.getTagStr();
         if (tagStr != null && !tagStr.isEmpty()) {
-            response.setTags(Set.of(tagStr.split(",")));
+            Set<String> parsedTags = Arrays.stream(tagStr.split(","))
+                    .map(String::trim)
+                    .filter(tag -> !tag.isBlank())
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            if (!parsedTags.isEmpty()) {
+                response.setTags(parsedTags);
+            }
         }
         response.setNotes(rating.getNotes());
         response.setRatedAt(rating.getRatedAt());

@@ -29,7 +29,7 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
     @Query("SELECT r FROM Rating r WHERE r.userId = :userId AND " +
            "(:search IS NULL OR :search = '' OR " +
            "LOWER(r.notes) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "EXISTS (SELECT 1 FROM r.tags t WHERE LOWER(t) LIKE LOWER(CONCAT('%', :search, '%'))))")
+           "LOWER(COALESCE(r.tagStr, '')) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Rating> searchByUserId(@Param("userId") String userId, @Param("search") String search, Pageable pageable);
 
     List<Rating> findByMovieId(Long movieId);

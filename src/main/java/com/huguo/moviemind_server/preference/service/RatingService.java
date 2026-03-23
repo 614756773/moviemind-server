@@ -2,7 +2,6 @@ package com.huguo.moviemind_server.preference.service;
 
 import com.huguo.moviemind_server.common.dto.PageResponse;
 import com.huguo.moviemind_server.common.exception.ResourceNotFoundException;
-import com.huguo.moviemind_server.auth.model.User;
 import com.huguo.moviemind_server.movie.model.Movie;
 import com.huguo.moviemind_server.preference.model.Rating;
 import com.huguo.moviemind_server.preference.repository.RatingRepository;
@@ -41,7 +40,7 @@ public class RatingService {
     }
 
     public Page<RatingResponse> getUserRatings(String userId, String search, Pageable pageable) {
-        User user = userRepository.findById(userId)
+        userRepository.findByUsername(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Page<Rating> ratings;
@@ -55,7 +54,7 @@ public class RatingService {
     }
 
     public RatingResponse createRating(String userId, RatingRequest request) {
-        User user = userRepository.findById(userId)
+        userRepository.findByUsername(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Movie movie = movieRepository.findById(request.getMovieId())

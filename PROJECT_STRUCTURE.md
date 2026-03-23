@@ -42,6 +42,15 @@
   - `dto/ApiResponse`, `PageResponse`：统一响应模型。
   - `exception/*`：统一异常与全局异常处理。
 - `config/SecurityConfig`：Spring Security、会话、鉴权规则配置。
+- `content/`：内容抓取与特征提取。
+  - `client/ChineseMovieDataProvider`, `DoubanSuggestionProvider`：中文站点数据接入（豆瓣建议接口）。
+  - `service/MovieDataIngestionService`：抓取并落库原始电影数据。
+  - `service/RuleBasedFeatureExtractor`, `MovieFeatureExtractionService`：规则特征提取与特征存储。
+  - `controller/ContentController`：触发抓取/分析与查询特征接口。
+- `recommendation/`：推荐生成与反馈闭环（本地规则版）。
+  - `service/RecommendationService`：候选过滤、偏好打分、推荐事件写入。
+  - `controller/RecommendationController`：推荐获取与反馈提交接口。
+  - `model/RecommendationEvent`, `RecommendationItem`：推荐事件与反馈数据模型。
 
 ## 3. API 与安全边界
 

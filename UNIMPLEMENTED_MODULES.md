@@ -2,15 +2,18 @@
 
 基于当前代码目录、`CLAUDE.md` 的“下一步计划”以及 `system-design.md` 的目标设计，当前仍缺失（或仅部分实现）的模块如下。
 
-## 1) 推荐系统主链路（未实现）
+## 1) 推荐系统主链路（部分实现）
 
-当前代码树中没有 `recommendation` 包（如 controller/service/repository/model），也没有推荐接口（例如 `/api/recommendations`）和推荐事件追踪实体。
+已新增 `recommendation` 模块并支持：
+- 推荐列表生成（本地规则打分）
+- 推荐事件与候选项记录
+- 反馈提交（ADOPTED/REJECTED/IGNORED）
+- 采纳反馈自动加入待看清单
 
-对应设计目标里提到但尚未落地：
-- 用户画像服务（User Profile）
-- 候选召回与本地打分
-- LLM rerank 与推荐理由生成
-- 推荐事件记录与反馈闭环
+仍未实现的推荐扩展：
+- 用户画像增强（更多行为特征）
+- LLM rerank 与高质量推荐理由
+- 候选池预计算（UserCandidatePool）与实验开关
 
 ## 2) 内容分析模块（部分实现）
 
@@ -40,4 +43,4 @@
 
 ---
 
-> 已实现的主干模块：`auth`、`movie`（不含 Genre 完整能力）、`preference`、`watchlist`、`user/settings`。
+> 已实现的主干模块：`auth`、`movie`（Genre 仍为字符串存储）、`preference`、`watchlist`、`user/settings`、`content(v1)`、`recommendation(v1)`。

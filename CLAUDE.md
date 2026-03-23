@@ -60,6 +60,29 @@ MovieMind 是一个电影推荐系统，包含 Spring Boot 后端和 Next.js 前
   - `PUT /api/settings/notifications` - 更新通知设置
   - `DELETE /api/settings/data` - 清除用户数据
 
+### 6. 推荐模块 (recommendation)
+- **RecommendationEvent / RecommendationItem 实体**：推荐事件、候选项、本地得分、反馈状态
+- **推荐 API**：
+  - `GET /api/recommendations` - 获取当前用户推荐列表（本地规则打分）
+  - `POST /api/recommendations/feedback` - 提交反馈（ADOPTED/REJECTED/IGNORED）
+- **当前实现策略**：
+  - 基于用户评分历史构建类型/标签偏好权重
+  - 过滤已评分与已在待看清单的电影
+  - 使用 `genre/tag/externalRating` 组合做本地评分
+  - 记录推荐事件并支持反馈闭环（采纳可自动入待看）
+
+### 7. 内容模块 (content)
+- **MovieRawData 实体**：存储抓取的原始电影数据
+- **MovieFeature 实体**：存储提取后的情感/主题/氛围/风格特征
+- **内容 API**：
+  - `POST /api/content/ingestion` - 抓取电影原始数据并落库
+  - `POST /api/content/features/analyze/{movieId}` - 触发单片特征分析
+  - `POST /api/content/features/analyze` - 触发批量特征分析
+  - `GET /api/content/features/{movieId}` - 查询电影特征
+- **当前实现策略**：
+  - 已接入豆瓣建议接口（中国站点）
+  - 使用 `rule-based-v1.1` 规则算法提取特征并记录算法版本
+
 ## 数据库设计
 
 ### 使用 H2 文件数据库
@@ -144,16 +167,15 @@ mvn spring-boot:run
 
 ## 下一步计划
 
-1. **推荐系统实现**
-   - 用户画像服务
-   - 候选召回服务
-   - LLM rerank 集成
-   - 推荐事件跟踪
+1. **推荐系统增强**
+   - 用户画像服务升级（引入更多行为特征）
+   - 候选召回策略扩展（多路召回）
+   - LLM rerank 集成（替换当前本地最终排序）
 
-2. **内容分析模块**
-   - 电影特征存储
-   - 爬虫集成
-   - AI 分析功能
+2. **内容分析增强**
+   - 多数据源爬虫/开放接口（猫眼、腾讯视频等）
+   - AI/LLM 特征提取增强（替换当前规则提取）
+   - 内容特征质量评估与重算流程
 
 3. **优化功能**
    - 缓存机制

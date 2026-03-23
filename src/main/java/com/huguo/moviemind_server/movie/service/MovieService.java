@@ -5,17 +5,17 @@ import com.huguo.moviemind_server.movie.model.Movie;
 import com.huguo.moviemind_server.movie.model.Tag;
 import com.huguo.moviemind_server.movie.repository.MovieRepository;
 import com.huguo.moviemind_server.movie.repository.TagRepository;
-import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,12 +24,15 @@ public class MovieService {
 
     private final MovieRepository movieRepository;
     private final TagRepository tagRepository;
+    private final boolean sampleDataEnabled;
 
     @Autowired
     public MovieService(MovieRepository movieRepository,
-                      TagRepository tagRepository) {
+                      TagRepository tagRepository,
+                      @Value("${app.sample-data.enabled:true}") boolean sampleDataEnabled) {
         this.movieRepository = movieRepository;
         this.tagRepository = tagRepository;
+        this.sampleDataEnabled = sampleDataEnabled;
     }
 
     public Page<Movie> searchMovies(String query, Pageable pageable) {
@@ -50,7 +53,11 @@ public class MovieService {
     public List<Movie> getMoviesByTag(String tagName) {
         Tag tag = tagRepository.findByName(tagName)
                 .orElseThrow(() -> new ResourceNotFoundException("Tag not found: " + tagName));
-        return movieRepository.findByTagsIn(Arrays.asList(tag.getName()));
+        return movieRepository.findByTagName(tag.getName());
+    }
+
+    public List<Movie> getMoviesByGenre(String genreName) {
+        return movieRepository.findByGenreName(genreName);
     }
 
     public List<Movie> getMoviesByYear(Integer year) {
@@ -60,6 +67,18 @@ public class MovieService {
     public List<String> getAllTagNames() {
         return tagRepository.findAll().stream()
                 .map(Tag::getName)
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    public List<String> getAllGenreNames() {
+        return movieRepository.findAll().stream()
+                .map(Movie::getGenresStr)
+                .filter(genres -> genres != null && !genres.isBlank())
+                .flatMap(genres -> Arrays.stream(genres.split(",")))
+                .map(String::trim)
+                .filter(genre -> !genre.isEmpty())
+                .distinct()
                 .sorted()
                 .collect(Collectors.toList());
     }
@@ -76,8 +95,12 @@ public class MovieService {
         movieRepository.delete(movie);
     }
 
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     public void initializeSampleData() {
+        if (!sampleDataEnabled) {
+            return;
+        }
+
         // Initialize basic tags if they don't exist
         if (tagRepository.count() == 0) {
             initializeTags();
@@ -139,13 +162,15 @@ public class MovieService {
         movieRepository.saveAll(sampleMovies);
     }
 
-    private Movie createSampleMovie(String title, int year, String posterUrl, double rating, String... genres) {
+    private Movie createSampleMovie(String title, int year, String posterUrl, double rating, String genre, String tag) {
         Movie movie = new Movie();
         movie.setTitle(title);
         movie.setYear(year);
         movie.setPosterUrl(posterUrl);
         movie.setRatingExternal(rating);
         movie.setExternalId("MOVIE_" + title.replace(" ", "_") + "_" + year);
+        movie.setGenresStr(genre);
+        movie.setTagsStr(tag);
 
         return movie;
     }

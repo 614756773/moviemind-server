@@ -20,8 +20,11 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
 
     List<Movie> findByYear(Integer year);
 
-    @Query("SELECT m FROM Movie m where m.tagsStr like :tags")
-    List<Movie> findByTagsIn(@Param("tags") List<String> tags);
+    @Query("SELECT m FROM Movie m WHERE LOWER(COALESCE(m.tagsStr, '')) LIKE LOWER(CONCAT('%', :tagName, '%'))")
+    List<Movie> findByTagName(@Param("tagName") String tagName);
+
+    @Query("SELECT m FROM Movie m WHERE LOWER(COALESCE(m.genresStr, '')) LIKE LOWER(CONCAT('%', :genreName, '%'))")
+    List<Movie> findByGenreName(@Param("genreName") String genreName);
 
     @Query("SELECT m FROM Movie m")
     Page<Movie> searchMovies(@Param("search") String search, Pageable pageable);

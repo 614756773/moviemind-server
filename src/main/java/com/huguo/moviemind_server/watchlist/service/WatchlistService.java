@@ -43,7 +43,7 @@ public class WatchlistService {
         this.ratingRepository = ratingRepository;
     }
 
-    public Page<WatchlistResponse> getUserWatchlist(String userId, String status, String search, Pageable pageable) {
+    public Page<WatchlistResponse> getUserWatchlist(String username, String status, String search, Pageable pageable) {
         Page<WatchlistItem> items;
         WatchlistItem.WatchlistStatus statusFilter = null;
         if (status != null) {
@@ -56,24 +56,24 @@ public class WatchlistService {
 
         if (statusFilter != null) {
             if (search != null && !search.trim().isEmpty()) {
-                items = watchlistItemRepository.searchByUserId(userId, search, pageable);
+                items = watchlistItemRepository.searchByUserId(username, search, pageable);
             } else {
-                items = watchlistItemRepository.findByUserIdAndStatus(userId, statusFilter, pageable);
+                items = watchlistItemRepository.findByUserIdAndStatus(username, statusFilter, pageable);
             }
         } else {
             if (search != null && !search.trim().isEmpty()) {
-                items = watchlistItemRepository.searchByUserId(userId, search, pageable);
+                items = watchlistItemRepository.searchByUserId(username, search, pageable);
             } else {
-                items = watchlistItemRepository.findByUserId(userId, pageable);
+                items = watchlistItemRepository.findByUserId(username, pageable);
             }
         }
 
         return items.map(this::convertToResponse);
     }
 
-    public WatchlistResponse addToWatchlist(String userId, Long movieId, String aiReason) {
+    public WatchlistResponse addToWatchlist(String username, Long movieId, String aiReason) {
         // Verify user exists
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         // Verify movie exists
@@ -81,12 +81,12 @@ public class WatchlistService {
                 .orElseThrow(() -> new ResourceNotFoundException("Movie not found"));
 
         // Check if already in watchlist
-        if (watchlistItemRepository.existsByUserIdAndMovieId(userId, movieId)) {
-            throw new ConflictException("Movie already in watchlist");
+        if (watchlistItemRepository.existsByUserIdAndMovieId(username, movieId)) {
+            throw new RuntimeException("Movie already in watchlist");
         }
 
         WatchlistItem item = new WatchlistItem();
-        item.setUserId(userId);
+        item.setUserId(user.getUsername());
         item.setMovieId(movieId);
         item.setStatus(WatchlistItem.WatchlistStatus.PENDING);
         item.setAddedAt(LocalDateTime.now());
@@ -96,13 +96,13 @@ public class WatchlistService {
         return convertToResponse(item);
     }
 
-    public WatchlistResponse markAsWatched(Long itemId, String userId, WatchlistItemMarkWatchedRequest request) {
+    public WatchlistResponse markAsWatched(Long itemId, String username, WatchlistItemMarkWatchedRequest request) {
         WatchlistItem item = watchlistItemRepository.findById(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Watchlist item not found"));
 
         // Verify ownership
-        if (!item.getUserId().equals(userId)) {
-            throw new ForbiddenException("Forbidden to update this item");
+        if (!item.getUserId().equals(username)) {
+            throw new RuntimeException("Unauthorized to update this item");
         }
 
         // Mark as watched
@@ -111,7 +111,7 @@ public class WatchlistService {
         // Create rating if provided
         if (request != null && request.getRating() != null) {
             Rating rating = new Rating();
-            rating.setUserId(userId);
+            rating.setUserId(username);
             rating.setMovieId(item.getMovieId());
             rating.setScore(request.getRating().getScore());
             rating.setNotes(request.getRating().getNotes());
@@ -126,33 +126,33 @@ public class WatchlistService {
         return convertToResponse(item);
     }
 
-    public void removeFromWatchlist(Long itemId, String userId) {
+    public void removeFromWatchlist(Long itemId, String username) {
         WatchlistItem item = watchlistItemRepository.findById(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Watchlist item not found"));
 
         // Verify ownership
-        if (!item.getUserId().equals(userId)) {
-            throw new ForbiddenException("Forbidden to delete this item");
+        if (!item.getUserId().equals(username)) {
+            throw new RuntimeException("Unauthorized to delete this item");
         }
 
         watchlistItemRepository.delete(item);
     }
 
-    public WatchlistResponse getWatchlistItem(Long itemId, String userId) {
+    public WatchlistResponse getWatchlistItem(Long itemId, String username) {
         WatchlistItem item = watchlistItemRepository.findById(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Watchlist item not found"));
 
         // Verify ownership
-        if (!item.getUserId().equals(userId)) {
-            throw new ForbiddenException("Forbidden to access this item");
+        if (!item.getUserId().equals(username)) {
+            throw new RuntimeException("Unauthorized to access this item");
         }
 
         return convertToResponse(item);
     }
 
-    public WatchlistStats getWatchlistStats(String userId) {
-        long pendingCount = watchlistItemRepository.countByUserIdAndStatus(userId, WatchlistItem.WatchlistStatus.PENDING);
-        long watchedCount = watchlistItemRepository.countByUserIdAndStatus(userId, WatchlistItem.WatchlistStatus.WATCHED);
+    public WatchlistStats getWatchlistStats(String username) {
+        long pendingCount = watchlistItemRepository.countByUserIdAndStatus(username, WatchlistItem.WatchlistStatus.PENDING);
+        long watchedCount = watchlistItemRepository.countByUserIdAndStatus(username, WatchlistItem.WatchlistStatus.WATCHED);
 
         return new WatchlistStats(pendingCount, watchedCount);
     }

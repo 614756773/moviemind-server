@@ -52,4 +52,33 @@ public class RecommendationController {
                 "feedbackType", request.getFeedbackType().name()
         )));
     }
+
+    @PostMapping("/pool/precompute")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> precomputeCandidatePool(
+            Authentication authentication,
+            @RequestParam(defaultValue = "100") int limit
+    ) {
+        int precomputedCount = recommendationService.precomputeCandidatePool(
+                authentication.getName(),
+                Math.min(limit, 500)
+        );
+
+        return ResponseEntity.ok(new ApiResponse<>("Candidate pool precomputed", Map.of(
+                "precomputedCount", precomputedCount,
+                "candidatePoolEnabled", recommendationService.isCandidatePoolEnabled(authentication.getName())
+        )));
+    }
+
+    @PutMapping("/pool/toggle")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> toggleCandidatePool(
+            Authentication authentication,
+            @RequestParam boolean enabled
+    ) {
+        boolean value = recommendationService.setCandidatePoolEnabled(authentication.getName(), enabled);
+
+        return ResponseEntity.ok(new ApiResponse<>("Candidate pool toggle updated", Map.of(
+                "candidatePoolEnabled", value,
+                "candidatePoolSize", recommendationService.getCandidatePoolSize(authentication.getName())
+        )));
+    }
 }

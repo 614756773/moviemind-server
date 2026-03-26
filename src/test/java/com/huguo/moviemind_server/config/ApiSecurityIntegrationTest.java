@@ -26,9 +26,18 @@ class ApiSecurityIntegrationTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(header().doesNotExist("Location"))
+                .andExpect(header().exists("X-Request-Id"))
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.error").value("Unauthorized"))
                 .andExpect(jsonPath("$.message").value("Authentication required"))
                 .andExpect(jsonPath("$.path").value("/api/movies"));
+    }
+
+    @Test
+    void actuatorHealthShouldBePubliclyAccessible() throws Exception {
+        mockMvc.perform(get("/actuator/health"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value("UP"));
     }
 }

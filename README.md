@@ -44,3 +44,19 @@ mvn spring-boot:run
    - `sentiment = (positiveWeight - negativeWeight) / (positiveWeight + negativeWeight)`  
 3. 用主题/氛围/风格词典做关键词匹配提取特征标签。  
 4. 将结果写入 `movie_features`，并记录 `algorithmVersion` 便于后续升级对比。  
+
+## 可观测性（Observability）
+
+已接入 Spring Boot Actuator + Micrometer + Prometheus 导出，默认开放：
+
+- `GET /actuator/health`
+- `GET /actuator/info`
+- `GET /actuator/metrics`
+- `GET /actuator/prometheus`
+
+并新增了应用级请求指标：
+
+- `moviemind_http_server_requests_total`
+- `moviemind_http_server_requests_duration`
+
+服务会自动为每个请求注入/透传 `X-Request-Id`，并写入日志 MDC，便于请求链路排查。
